@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Impact Token System</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f4f6f9;
+            line-height: 1.6;
+        }
+        .container {
+            background-color: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .contribution-card {
+            border: 1px solid #e0e0e0;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 5px;
+        }
+        input, select, textarea, button {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+        }
+        .token-balance {
+            font-size: 1.5em;
+            color: #4CAF50;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Register Contributor</h2>
+        <input type="text" id="contributorName" placeholder="Your Name">
+        <button onclick="registerContributor()">Register</button>
+    </div>
+
+    <div class="container">
+        <h2>Log Contribution</h2>
+        <textarea id="contributionDescription" placeholder="Describe your contribution"></textarea>
+        <select id="contributionCategory">
+            <option value="Education">Education</option>
+            <option value="Environment">Environment</option>
+            <option value="Community">Community</option>
+            <option value="Healthcare">Healthcare</option>
+            <option value="Technology">Technology</option>
+            <option value="Humanitarian">Humanitarian</option>
+        </select>
+        <input type="number" id="impactScore" placeholder="Impact Score">
+        <button onclick="logContribution()">Log Contribution</button>
+    </div>
+
+    <div class="container">
+        <h2>Verify Contribution</h2>
+        <input type="text" id="verifyContributorId" placeholder="Contributor Principal ID">
+        <input type="number" id="contributionIndex" placeholder="Contribution Index">
+        <button onclick="verifyContribution()">Verify Contribution</button>
+    </div>
+
+    <div class="container">
+        <h2>Exchange Impact Tokens</h2>
+        <input type="number" id="exchangeAmount" placeholder="Token Amount">
+        <textarea id="serviceDescription" placeholder="Service/Reward Description"></textarea>
+        <button onclick="exchangeTokens()">Exchange Tokens</button>
+    </div>
+
+    <div class="container">
+        <h2>Contributor Profile</h2>
+        <input type="text" id="profileId" placeholder="Contributor Principal ID">
+        <button onclick="getContributorProfile()">Get Profile</button>
+        <div id="profileDetails"></div>
+    </div>
+
+    <script type="module">
+        import { backend } from 'declarations/backend';
+
+        const ImpactTokenSystem = backend;
+
+        // Fungsi untuk mendaftarkan kontributor
+        window.registerContributor = async () => {
+            const name = document.getElementById('contributorName').value;
+
+            try {
+                const result = await ImpactTokenSystem.registerContributor(name);
+                if (result.ok) {
+                    alert(`Registered with ID: ${result.ok}`);
+                } else {
+                    alert(`Error: ${result.err}`);
+                }
+            } catch (error) {
+                console.error('Registration failed:', error);
+            }
+        };
+
+        // Fungsi untuk mencatat kontribusi
+        window.logContribution = async () => {
+            const description = document.getElementById('contributionDescription').value;
+            const category = document.getElementById('contributionCategory').value;
+            const impactScore = parseInt(document.getElementById('impactScore').value);
+
+            try {
+                const result = await ImpactTokenSystem.logContribution(description, category, impactScore);
+                if (result.ok) {
+                    alert('Contribution logged successfully');
+                } else {
+                    alert(`Error: ${result.err}`);
+                }
+            } catch (error) {
+                console.error('Logging contribution failed:', error);
+            }
+        };
+
+        // Fungsi untuk verifikasi kontribusi
+        window.verifyContribution = async () => {
+            const contributorId = document.getElementById('verifyContributorId').value;
+            const contributionIndex = parseInt(document.getElementById('contributionIndex').value);
+
+            try {
+                const result = await ImpactTokenSystem.verifyContribution(contributorId, contributionIndex);
+                if (result.ok) {
+                    alert('Contribution verified successfully');
+                } else {
+                    alert(`Error: ${result.err}`);
+                }
+            } catch (error) {
+                console.error('Verification failed:', error);
+            }
+        };
+
+        // Fungsi untuk menukar token
+        window.exchangeTokens = async () => {
+            const amount = parseInt(document.getElementById('exchangeAmount').value);
+            const serviceDescription = document.getElementById('serviceDescription').value;
+
+            try {
+                const result = await ImpactTokenSystem.exchangeImpactTokens(amount, serviceDescription);
+                if (result.ok) {
+                    alert(`Exchanged ${result.ok} tokens successfully`);
+                } else {
+                    alert(`Error: ${result.err}`);
+                }
+            } catch (error) {
+                console.error('Token exchange failed:', error);
+            }
+        };
+
+        // Fungsi untuk mendapatkan profil kontributor
+        window.getContributorProfile = async () => {
+            const profileId = document.getElementById('profileId').value;
+            const profileDetails = document.getElementById('profileDetails');
+
+            try {
+                const profile = await ImpactTokenSystem.getContributorProfile(profileId);
+                if (profile) {
+                    profileDetails.innerHTML = `
+                        <h3>Name: ${profile.name}</h3>
+                        <div class="token-balance">
+                            Impact Tokens: ${profile.impactTokens}
+                        </div>
+                        <div>Total Impact Score: ${profile.totalImpactScore}</div>
+                        <h4>Contribution History:</h4>
+                        ${profile.contributionHistory.map((contribution, index) => `
+                            <div class="contribution-card">
+                                <strong>Description:</strong> ${contribution.description}<br>
+                                <strong>Category:</strong> ${contribution.category}<br>
+                                <strong>Impact Score:</strong> ${contribution.impactScore}<br>
+                                <strong>Status:</strong> ${contribution.verificationStatus}<br>
+                                <strong>Verifiers:</strong> ${contribution.verifiers.length}
+                            </div>
+                        `).join('') || 'No contributions yet'}
+                    `;
+                } else {
+                    profileDetails.innerHTML = 'Profile not found';
+                }
+            } catch (error) {
+                console.error('Profile retrieval failed:', error);
+                profileDetails.innerHTML = 'Error retrieving profile';
+            }
+        };
+    </script>
+</body>
+</html>
